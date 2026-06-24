@@ -1,10 +1,10 @@
 module iir_filter #(
     // all parameters are in Q4.32 format
-    parameter [35:0] B0 = 36'b000100000000000000000000000000000000,
-    parameter [35:0] B1 = 36'b000000000000000000000000000000000000,
-    parameter [35:0] B2 = 36'b000000000000000000000000000000000000,
-    parameter [35:0] A1 = 36'b000000000000000000000000000000000000,
-    parameter [35:0] A2 = 36'b000000000000000000000000000000000000
+    parameter real B0 = 1.0,
+    parameter real B1 = 0.0,
+    parameter real B2 = 0.0,
+    parameter real A1 = 0.0,
+    parameter real A2 = 0.0
 )(
     input                   clk_in,
     input                   data_ready_in,
@@ -12,6 +12,12 @@ module iir_filter #(
     output                  data_ready_out,
     output signed [35:0]    signal_out // Q4.32
 );
+    parameter [35:0] B0_FIXED = B0 * $pow(2, 32);
+    parameter [35:0] B1_FIXED = B1 * $pow(2, 32);
+    parameter [35:0] B2_FIXED = B2 * $pow(2, 32);
+    parameter [35:0] A1_FIXED = A1 * $pow(2, 32);
+    parameter [35:0] A2_FIXED = A2 * $pow(2, 32);
+
     // Q4.32
     var logic signed [35:0] in_history_0 = 36'b0;
     var logic signed [35:0] in_history_1 = 36'b0;
@@ -35,35 +41,35 @@ module iir_filter #(
 
     mult_36x36_safe mult_b0(
         .CLK(clk_in),
-        .A(B0),
+        .A(B0_FIXED),
         .B(signal_in),
         .P(b0_result)
     );
 
     mult_36x36_safe mult_b1(
         .CLK(clk_in),
-        .A(B1),
+        .A(B1_FIXED),
         .B(in_history_1),
         .P(b1_result)
     );
 
     mult_36x36_safe mult_b2(
         .CLK(clk_in),
-        .A(B2),
+        .A(B2_FIXED),
         .B(in_history_2),
         .P(b2_result)
     );
 
     mult_36x36_safe mult_a1(
         .CLK(clk_in),
-        .A(A1),
+        .A(A1_FIXED),
         .B(out_history_1),
         .P(a1_result)
     );
 
     mult_36x36_safe mult_a2(
         .CLK(clk_in),
-        .A(A2),
+        .A(A2_FIXED),
         .B(out_history_2),
         .P(a2_result)
     );

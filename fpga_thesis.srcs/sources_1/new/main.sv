@@ -1,8 +1,23 @@
-`define iir_b0  1.0625839e-05
-`define iir_b1  2.1251678e-05
-`define iir_b2  1.0625839e-05
-`define iir_a1  1.99075886
-`define iir_a2  -0.99080137
+// 2nd order PLL filter coefficients
+// Butterworth, fc = 1500 Hz, fs = 961538 Hz
+/*
+parameter int num_sos = 1;
+parameter real iir_b0 [num_sos-1:0] = '{2.38531558e-05};
+parameter real iir_b1 [num_sos-1:0] = '{4.77063117e-05};
+parameter real iir_b2 [num_sos-1:0] = '{2.38531558e-05};
+parameter real iir_a1 [num_sos-1:0] = '{1.98613842};
+parameter real iir_a2 [num_sos-1:0] = '{-0.98623384};
+*/
+
+// 4th order PLL filter coeffcients
+// Butterworth, fc = 2500 Hz, fs = 961358 Hz
+parameter int num_sos = 2;
+parameter real iir_b0 [num_sos] = '{  4.35774336e-08,      1.00000000e-01 };
+parameter real iir_b1 [num_sos] = '{  8.71548672e-08,      2.00000000e-01 };
+parameter real iir_b2 [num_sos] = '{  4.35774336e-08,      1.00000000e-01 };
+parameter real iir_a1 [num_sos] = '{  1.97000170e+00,      1.98730977e+00 };
+parameter real iir_a2 [num_sos] = '{ -9.70264599e-01,     -9.87574980e-01 };
+
 
 module top (
     input   clk,
@@ -75,16 +90,20 @@ module top (
 
     wire [15:0] vco_frequency;
     wire vco_data_ready;
+    logic prev_vco_data_ready = 1'b0;
+    logic bipolar_trigger = 1'b0;
+
     pll #(
         .FS(25000000.0 / 26.0),
         .CENTER_FREQUENCY(10000.0),
         .CONTROL_GAIN(1000.0),
+        .NUM_SOS(num_sos),
 
-        .B0(`iir_b0 * $pow(2, 32)),
-        .B1(`iir_b1 * $pow(2, 32)),
-        .B2(`iir_b2 * $pow(2, 32)),
-        .A1(`iir_a1 * $pow(2, 32)),
-        .A2(`iir_a2 * $pow(2, 32))
+        .B0(iir_b0),
+        .B1(iir_b1),
+        .B2(iir_b2),
+        .A1(iir_a1),
+        .A2(iir_a2)
     ) pll_instance (
         .clk_in(pll_clk_reg),
         .data_ready_in(data_ready_clk_q),
@@ -92,6 +111,14 @@ module top (
         .data_ready_out(vco_data_ready),
         .vco_frequency_out(vco_frequency)
     );
+
+    always_ff @(posedge pll_clk_reg) begin
+        if (vco_data_ready && !prev_vco_data_ready) begin
+            bipolar_trigger <= !bipolar_trigger;
+        end
+
+        prev_vco_data_ready <= vco_data_ready;
+    end
 
     // Assign vco_frequency to ChipKit digital I/O
     assign ck_io0 = vco_frequency[0];
@@ -109,5 +136,5 @@ module top (
     assign ck_io12 = vco_frequency[12];
     assign ck_io13 = vco_frequency[13];
     assign ck_io26 = vco_frequency[14];
-    assign ck_io27 = vco_data_ready;
+    assign ck_io27 = bipolar_trigger;
 endmodule

@@ -1,8 +1,18 @@
-`define iir_b0 2.2059436460686298e-05
-`define iir_b1 4.4118872921372596e-05
-`define iir_b2 2.2059436460686298e-05
-`define iir_a1 1.9866715465479383
-`define iir_a2 -0.9867597842937811
+parameter int tb_num_sos = 2;
+
+parameter real tb_iir_b0 [tb_num_sos] = '{  4.35774336e-08,      1.00000000e-01 };
+parameter real tb_iir_b1 [tb_num_sos] = '{  8.71548672e-08,      2.00000000e-01 };
+parameter real tb_iir_b2 [tb_num_sos] = '{  4.35774336e-08,      1.00000000e-01 };
+parameter real tb_iir_a1 [tb_num_sos] = '{  1.97000170e+00,      1.98730977e+00 };
+parameter real tb_iir_a2 [tb_num_sos] = '{ -9.70264599e-01,     -9.87574980e-01 };
+
+/*
+parameter real tb_iir_b0 [tb_num_sos] = '{  6.59551947e-05,  6.59551947e-05 };
+parameter real tb_iir_b1 [tb_num_sos] = '{  1.31910389e-04,  1.31910389e-04 };
+parameter real tb_iir_b2 [tb_num_sos] = '{  6.59551947e-05,  6.59551947e-05 };
+parameter real tb_iir_a1 [tb_num_sos] = '{  1.97689802e+00,  1.97689802e+00 };
+parameter real tb_iir_a2 [tb_num_sos] = '{ -9.77161839e-01, -9.77161839e-01};
+*/
 
 `timescale 1ns / 10ps
 module tb_pll(
@@ -13,19 +23,20 @@ module tb_pll(
     var bit data_ready_state = 1'b0;
     var bit signed [15:0] ref_signal = 16'b0;
 
-    const real generator_frequency = 9500.0;
+    const real generator_frequency = 9750.0;
     const real pi = 3.14159;
 
     pll #(
         .FS(500000), // 500 kHz
         .CENTER_FREQUENCY(10000), // 10 kHz
-        .CONTROL_GAIN(2000), // 2 kHz
+        .CONTROL_GAIN(1000), // 2 kHz
+        .NUM_SOS(tb_num_sos),
 
-        .B0(`iir_b0 * $pow(2, 32)),
-        .B1(`iir_b1 * $pow(2, 32)),
-        .B2(`iir_b2 * $pow(2, 32)),
-        .A1(`iir_a1 * $pow(2, 32)),
-        .A2(`iir_a2 * $pow(2, 32))
+        .B0(tb_iir_b0),
+        .B1(tb_iir_b1),
+        .B2(tb_iir_b2),
+        .A1(tb_iir_a1),
+        .A2(tb_iir_a2)
     ) uut (
         .clk_in(clk_state),
         .data_ready_in(data_ready_state),

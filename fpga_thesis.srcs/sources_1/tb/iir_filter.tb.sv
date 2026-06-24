@@ -1,3 +1,9 @@
+parameter real tb_iir_b0 [1] = '{2.2059436460686298e-05};
+parameter real tb_iir_b1 [1] = '{4.4118872921372596e-05};
+parameter real tb_iir_b2 [1] = '{2.2059436460686298e-05};
+parameter real tb_iir_a1 [1] = '{1.9866715465479383};
+parameter real tb_iir_a2 [1] = '{-0.9867597842937811};
+
 `timescale 1ns / 1ns
 module tb_iir_filter (
     output [35:0]   filter_in, // Q4.32
@@ -9,11 +15,11 @@ module tb_iir_filter (
     var bit [35:0] signal_in_state = 36'b0;
 
     iir_filter #(
-        .B0         (36'h0000001ca),
-        .B1         (36'h000000394),
-        .B2         (36'h0000001ca),
-        .A1         (36'h1ffc36fd6),
-        .A2         (36'hf003c88f2)
+        .B0         (tb_iir_b0),
+        .B1         (tb_iir_b1),
+        .B2         (tb_iir_b2),
+        .A1         (tb_iir_a1),
+        .A2         (tb_iir_a2)
     ) uut (
         .clk_in         (clk_state),
         .data_ready_in  (data_ready_state),
