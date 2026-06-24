@@ -186,4 +186,4 @@ set_property -dict { PACKAGE_PIN E17   IOSTANDARD LVCMOS33 } [get_ports { Vaux1_
 
 # Additional Rules
 set_property SEVERITY {ERROR} [get_drc_checks LUTLP-1]
-create_generated_clock -name adc_data_clk -source [get_pins { adc_instance/dclk_in }] -edges {1 3 261} -edge_shift {0.0 0.0 0.0} [get_nets { data_ready_clk }]
+create_generated_clock -name adc_data_clk -source [get_pins { clk_IBUF_BUFG_inst/O }] -edges {1 3 11} -edge_shift {0.0 0.0 0.0} [get_nets { pll_clk_reg }]

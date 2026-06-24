@@ -7,7 +7,9 @@ module iir_filter #(
     parameter [35:0] A2 = 36'b000000000000000000000000000000000000
 )(
     input                   clk_in,
+    input                   data_ready_in,
     input signed [35:0]     signal_in, // Q4.32
+    output                  data_ready_out,
     output signed [35:0]    signal_out // Q4.32
 );
     // Q4.32
@@ -15,6 +17,7 @@ module iir_filter #(
     var logic signed [35:0] in_history_1 = 36'b0;
     var logic signed [35:0] in_history_2 = 36'b0;
     var logic signed [35:0] out_history_1 = 36'b0;
+    var logic signed [35:0] out_history_2 = 36'b0;
 
     // Q4.32
     var logic signed [35:0] signal_out_reg;
@@ -33,7 +36,7 @@ module iir_filter #(
     mult_36x36_safe mult_b0(
         .CLK(clk_in),
         .A(B0),
-        .B(in_history_0),
+        .B(signal_in),
         .P(b0_result)
     );
 
@@ -54,24 +57,36 @@ module iir_filter #(
     mult_36x36_safe mult_a1(
         .CLK(clk_in),
         .A(A1),
-        .B(signal_out_next),
+        .B(out_history_1),
         .P(a1_result)
     );
 
     mult_36x36_safe mult_a2(
         .CLK(clk_in),
         .A(A2),
-        .B(out_history_1),
+        .B(out_history_2),
         .P(a2_result)
     );
 
+    logic data_ready_q = 1'b0;
+    logic data_ready_q2 = 1'b0;
+    logic data_ready_q3 = 1'b0;
+
     always @(posedge clk_in) begin
+        if (data_ready_in) begin
+            in_history_0 <= signal_in;
+            in_history_1 <= in_history_0;
+            in_history_2 <= in_history_1;
+            out_history_1 <= signal_out_next;
+            out_history_2 <= out_history_1;
+        end
+
         signal_out_reg <= signal_out_next;
-        in_history_0 <= signal_in;
-        in_history_1 <= in_history_0;
-        in_history_2 <= in_history_1;
-        out_history_1 <= signal_out_next;
+        data_ready_q <= data_ready_in;
+        data_ready_q2 <= data_ready_q;
+        data_ready_q3 <= data_ready_q2;
     end
 
     assign signal_out = signal_out_reg;
+    assign data_ready_out = data_ready_q3;
 endmodule

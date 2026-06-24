@@ -6,7 +6,9 @@ module adc_driver (
     input           pos_in,
     input           neg_in,
     output          data_ready_out,
-    output [11:0]   last_sample_out
+    output [11:0]   last_sample_out,
+
+    output [1:0]    debug_adc_state_out
 );
     parameter VALUE_REG = 7'h11; // VAUXP[1]/VAUXN[1]
 
@@ -19,16 +21,18 @@ module adc_driver (
     drp_state current_state = DRP_WAIT_FOR_EOC;
     drp_state next_state;
 
+    assign debug_adc_state_out = current_state;
+
     logic [11:0] current_value = 12'b0;
     logic [11:0] next_value;
 
     logic current_data_ready = 1'b0;
     logic next_data_ready;
 
-    wire den_in = current_state == DRP_INIT;
     wire drdy_out;
     wire [15:0] do_out;
     wire eoc_out;
+    wire den_in = eoc_out;
 
     xadc_wiz_0 adc_instance (
         .di_in(16'b0), // input wire [15:0] di_in
@@ -54,7 +58,7 @@ module adc_driver (
         case (current_state)
         DRP_WAIT_FOR_EOC: begin
             if (eoc_out) next_state = DRP_INIT;
-            else next_state = DRP_WAIT_FOR_EOC;
+            else next_state = DRP_WAIT_FOR_DRDY;
             next_value = current_value;
             next_data_ready = 1'b0;
         end

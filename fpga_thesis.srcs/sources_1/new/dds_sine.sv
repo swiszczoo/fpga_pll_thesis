@@ -1,6 +1,8 @@
 module dds_sine (
     input                   clk_in,
+    input                   data_ready_in,
     input [35:0]            phase_incr_in,  // Q4.32
+    output                  data_ready_out,
     output signed [15:0]    sample_out      // Q1.15
 );
     logic [9:0] lut_addr;
@@ -49,19 +51,36 @@ module dds_sine (
     always_comb begin
         phase_accumulator_next = phase_accumulator + phase_incr_in;
 
-        case (sine_phase_q)
+        case (sine_phase)
         2'b00: sample_next = lut_value;
         2'b01: sample_next = lut_value;
         2'b10: sample_next = lut_value_neg;
         2'b11: sample_next = lut_value_neg;
+        default: sample_next = lut_value;
         endcase
     end
 
+    logic data_ready_q = 1'b0;
+    logic data_ready_q2 = 1'b0;
+    logic data_ready_q3 = 1'b0;
+    logic data_ready_q4 = 1'b0;
     always_ff @(posedge clk_in) begin
-        phase_accumulator <= phase_accumulator_next;
-        sample_reg <= sample_next;
+        if (data_ready_in) begin
+            phase_accumulator <= phase_accumulator_next;
+        end
+
+        if (data_ready_q3) begin
+            sample_reg <= sample_next;
+        end
+
         sine_phase_q <= sine_phase;
+
+        data_ready_q <= data_ready_in;
+        data_ready_q2 <= data_ready_q;
+        data_ready_q3 <= data_ready_q2;
+        data_ready_q4 <= data_ready_q3;
     end
 
     assign sample_out = sample_reg;
+    assign data_ready_out = data_ready_q4;
 endmodule

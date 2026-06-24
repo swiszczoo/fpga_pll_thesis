@@ -4,12 +4,13 @@
 `define iir_a1 1.9866715465479383
 `define iir_a2 -0.9867597842937811
 
-`timescale 1ns / 1ns
+`timescale 1ns / 10ps
 module tb_pll(
     output [15:0] sig_ref_in,
     output [15:0] vco_frequency_out
 );
     var bit clk_state = 1'b0;
+    var bit data_ready_state = 1'b0;
     var bit signed [15:0] ref_signal = 16'b0;
 
     const real generator_frequency = 9500.0;
@@ -27,6 +28,7 @@ module tb_pll(
         .A2(`iir_a2 * $pow(2, 32))
     ) uut (
         .clk_in(clk_state),
+        .data_ready_in(data_ready_state),
         .sig_ref_in(ref_signal),
         .vco_frequency_out(vco_frequency_out)
     );
@@ -34,11 +36,17 @@ module tb_pll(
     assign sig_ref_in = ref_signal;
 
     initial begin
+        clk_state = 1'b0;
+        forever #(0.05) clk_state = !clk_state;
+    end
+
+    initial begin
         forever begin
-            clk_state = 1'b1;
-            #1;
-            clk_state = 1'b0;
-            #1;
+            @(posedge clk_state);
+            data_ready_state <= 1'b1;
+            @(posedge clk_state);
+            data_ready_state <= 1'b0;
+            for (int i = 0; i < 18; i++) @(posedge clk_state);
         end
     end
 

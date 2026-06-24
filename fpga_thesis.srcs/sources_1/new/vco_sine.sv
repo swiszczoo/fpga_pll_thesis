@@ -4,7 +4,9 @@ module vco_sine #(
     parameter real CONTROL_GAIN = 1000.0 // Hz per Volt
 ) (
     input                   clk_in,
+    input                   data_ready_in,
     input signed [35:0]     voltage_in,     // Q4.32
+    output                  data_ready_out,
     output signed [15:0]    sample_out,     // Q1.15
     output [15:0]           control_frequency_out
 );
@@ -57,14 +59,20 @@ module vco_sine #(
         control_frequency_next = BASE_PHASE_CTRL_FIXED + ctrl_result[67:32];
     end
 
+    logic data_ready_q = 1'b0;
+    logic data_ready_q2 = 1'b0;
     always_ff @(posedge clk_in) begin
         phase_incr_reg <= phase_incr_next;
         control_frequency_reg <= control_frequency_next;
+        data_ready_q <= data_ready_in;
+        data_ready_q2 <= data_ready_q;
     end
 
     dds_sine dds (
         .clk_in(clk_in),
+        .data_ready_in(data_ready_q2),
         .phase_incr_in(phase_incr_reg),
+        .data_ready_out(data_ready_out),
         .sample_out(sample_out)
     );
 
